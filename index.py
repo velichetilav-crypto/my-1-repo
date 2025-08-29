@@ -1,0 +1,180 @@
+# Lyric Generator - situation + emotion -> lyrics
+# Save as lyric_generator.py and run: python lyric_generator.py
+import random
+
+LYRIC_STYLES = {
+    "pop": {
+        "tempo_words": ["heartbeat", "neon", "midnight", "dancefloor", "echo"],
+        "structure": ["verse", "verse", "chorus", "verse", "chorus", "bridge", "chorus"]
+    },
+    "rap": {
+        "tempo_words": ["baseline", "city blocks", "headphones", "streetlight", "bar"],
+        "structure": ["verse", "verse", "hook", "verse", "hook", "bridge", "hook"]
+    },
+    "indie": {
+        "tempo_words": ["amber", "film grain", "cheap coffee", "vinyl", "breeze"],
+        "structure": ["verse", "verse", "chorus", "verse", "chorus"]
+    },
+    "ballad": {
+        "tempo_words": ["candle", "silhouette", "whisper", "windowpane", "moon"],
+        "structure": ["verse", "verse", "chorus", "verse", "bridge", "chorus"]
+    }
+}
+
+EMOTION_LEXICON = {
+    "happy": {
+        "verbs": ["spin", "glow", "rise", "run", "bloom", "shine"],
+        "adjs": ["golden", "brave", "wide", "bright", "gentle"],
+        "nouns": ["sun", "sky", "road", "song", "hands", "dream"]
+    },
+    "sad": {
+        "verbs": ["fall", "fade", "ache", "drift", "break", "unravel"],
+        "adjs": ["hollow", "blue", "quiet", "tired", "heavy"],
+        "nouns": ["rain", "window", "letter", "memory", "shadow", "phone"]
+    },
+    "angry": {
+        "verbs": ["burn", "clench", "rage", "shout", "snap", "crack"],
+        "adjs": ["red", "wild", "raw", "fractured", "feral"],
+        "nouns": ["storm", "match", "mirror", "bruise", "wire"]
+    },
+    "hopeful": {
+        "verbs": ["reach", "mend", "learn", "lean", "glow", "begin"],
+        "adjs": ["open", "steady", "tender", "new", "quiet"],
+        "nouns": ["horizon", "seed", "paper", "compass", "light"]
+    },
+    "nostalgic": {
+        "verbs": ["rewind", "hum", "trace", "keep", "save", "linger"],
+        "adjs": ["amber", "old", "faded", "polaroid", "sweet"],
+        "nouns": ["backseat", "summer", "notebook", "radio", "town"]
+    },
+    "romantic": {
+        "verbs": ["melt", "sway", "breathe", "tangle", "hold", "kiss"],
+        "adjs": ["soft", "warm", "slow", "silver", "sugar"],
+        "nouns": ["heartbeat", "eyes", "moonlight", "shoulder", "promise"]
+    },
+    "motivational": {
+        "verbs": ["climb", "grind", "push", "build", "rise", "forge"],
+        "adjs": ["iron", "bold", "true", "restless", "fearless"],
+        "nouns": ["mountain", "blueprint", "hammer", "track", "dawn"]
+    },
+    "heartbreak": {
+        "verbs": ["shiver", "splinter", "stumble", "bleed", "unfold"],
+        "adjs": ["cold", "lonely", "broken", "echoing", "late"],
+        "nouns": ["glass", "message", "doorway", "sheets", "silence"]
+    }
+}
+
+SITUATION_IMAGERY = {
+    "exam": ["blank pages", "graphite dust", "clock hands", "late-night lamps", "pages turned"],
+    "breakup": ["packed boxes", "open door", "quiet hallway", "key on the table", "empty frame"],
+    "long-distance": ["patchy calls", "timezone maps", "airport chairs", "window seats", "miles of static"],
+    "rainy day": ["bus windows", "puddles", "wet shoes", "fogged glass", "paper cups"],
+    "city night": ["neon signs", "taxi brakes", "rooftop wind", "alley echoes", "crosswalk beeps"],
+    "road trip": ["filling stations", "exit signs", "dusty maps", "snack wrappers", "open highway"],
+    "success": ["confetti air", "shaky hands", "stage lights", "inked contract", "photo flashes"],
+    "failure": ["crumpled drafts", "late emails", "empty chair", "last train", "closed blinds"],
+    "family": ["photo fridge", "festival lights", "shared plates", "porch steps", "old stories"],
+    "friendship": ["inside jokes", "bike tires", "group photos", "midnight chats", "borrowed hoodies"]
+}
+
+RHYME_SETS = {
+    "A": ["light", "night", "fight", "bright", "flight", "alright"],
+    "B": ["fire", "higher", "wire", "desire", "choir", "tire"],
+    "C": ["rain", "train", "again", "chain", "vein", "remain"],
+    "D": ["home", "phone", "alone", "stone", "tone", "unknown"]
+}
+
+def pick_words(emotion: str, situation: str):
+    bank = EMOTION_LEXICON.get(emotion.lower(), EMOTION_LEXICON["hopeful"])
+    imagery = SITUATION_IMAGERY.get(situation.lower(), ["side streets", "passing lights", "open windows"])
+    return bank, imagery
+
+def rhyme_word(pool_key: str):
+    return random.choice(RHYME_SETS[pool_key])
+
+def line_factory(bank, imagery, perspective="I", rhyme_pool="A", words_per_line=8):
+    subj = {"I":"I", "you":"you", "we":"we", "they":"they"}.get(perspective, "I")
+    verbs = bank["verbs"]
+    adjs = bank["adjs"]
+    nouns = bank["nouns"] + imagery
+
+    body_tokens = []
+    for _ in range(max(3, words_per_line-1)):
+        choice = random.choice([
+            random.choice(verbs),
+            random.choice(adjs),
+            random.choice(nouns),
+        ])
+        body_tokens.append(choice)
+    if subj not in body_tokens:
+        body_tokens.insert(0, subj)
+    end = rhyme_word(rhyme_pool)
+    line = " ".join(body_tokens).strip()
+    line = line.replace(" i ", " I ")
+    return f"{line} {end}"
+
+def make_section(kind, bank, imagery, perspective, rhyme_scheme):
+    lines = []
+    if kind in ("chorus", "hook"):
+        header = "CHORUS" if kind == "chorus" else "HOOK"
+        lines.append(f"[{header}]")
+        scheme = rhyme_scheme if rhyme_scheme else "AABB"
+        pools = list(scheme)
+        for i in range(4):
+            pool_key = pools[i % len(pools)]
+            lines.append(line_factory(bank, imagery, perspective, pool_key, words_per_line=7))
+        refrain = random.choice(["sing it back", "say my name", "let it ride", "hold that line"])
+        lines.append(f"({refrain})")
+    elif kind == "bridge":
+        lines.append("[BRIDGE]")
+        for _ in range(3):
+            lines.append(line_factory(bank, imagery, perspective, "D", words_per_line=9))
+    else:
+        lines.append("[VERSE]")
+        scheme = rhyme_scheme if rhyme_scheme else "ABAB"
+        pools = list(scheme)
+        for i in range(6):
+            pool_key = pools[i % len(pools)]
+            lines.append(line_factory(bank, imagery, perspective, pool_key, words_per_line=9))
+    return "\n".join(lines)
+
+def generate_lyrics(situation: str,
+                    emotion: str,
+                    style: str = "pop",
+                    perspective: str = "I",
+                    rhyme_scheme: str = "AABB",
+                    seed: int | None = None):
+    if seed is not None:
+        random.seed(seed)
+
+    style = style.lower()
+    meta = LYRIC_STYLES.get(style, LYRIC_STYLES["pop"])
+    bank, imagery = pick_words(emotion, situation)
+
+    imagery = imagery + meta["tempo_words"]
+
+    sections = []
+    for part in meta["structure"]:
+        sections.append(make_section(part, bank, imagery, perspective, rhyme_scheme))
+
+    title_bits = [emotion.title(), "x", situation.title()]
+    title = " ".join(title_bits)
+
+    return f"{title}\n" + "-" * len(title) + "\n\n" + "\n\n".join(sections)
+
+if _name_ == "_main_":
+    print("Lyric Generator — give me a situation & emotion.")
+    try:
+        situation = input("Situation (e.g., breakup, city night): ").strip()
+        emotion = input("Emotion (e.g., happy, sad, hopeful): ").strip()
+        style = input("Style [pop/rap/indie/ballad] (default pop): ").strip() or "pop"
+        perspective = input("Perspective [I/you/we/they] (default I): ").strip() or "I"
+        scheme = input("Rhyme scheme letters (e.g., AABB, ABAB) (default AABB): ").strip() or "AABB"
+        seed_in = input("Seed (blank for random): ").strip()
+        seed = int(seed_in) if seed_in else None
+    except (EOFError, KeyboardInterrupt):
+        print("\nGoodbye!")
+        raise SystemExit(0)
+
+    lyrics = generate_lyrics(situation, emotion, style, perspective, scheme, seed)
+    print("\n" + lyrics)
